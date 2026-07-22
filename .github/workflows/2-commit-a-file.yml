@@ -68,6 +68,16 @@ jobs:
       - name: Disable current workflow and enable next one
         run: |
           gh workflow disable "${{github.workflow}}"
-          gh workflow enable "Step 3"
+          NEXT_WORKFLOW=".github/workflows/3-open-a-pull-request.yml"
+          NEXT_WORKFLOW_STATE="$(gh workflow list --all --json path,state --jq ".[] | select(.path == \"$NEXT_WORKFLOW\") | .state")"
+
+          if [ -z "$NEXT_WORKFLOW_STATE" ]; then
+            echo "Could not find workflow at path $NEXT_WORKFLOW"
+            exit 1
+          fi
+
+          if [ "$NEXT_WORKFLOW_STATE" != "active" ]; then
+            gh workflow enable "$NEXT_WORKFLOW"
+          fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
